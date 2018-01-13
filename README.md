@@ -1,12 +1,22 @@
 # WifiBlinds
-Motorized blinds controlled with a Wemos D1 mini
+This is a little project I made to automate my blinds in my apartment.
+The hardware platform is based on a Wemos D1 mini (which is based on the esp8266).
 
-
-This project is my implmementation of wifi and ir controlled blinds.
-
-The projec uses the following components
-- Wemos D1 mini
+The following components are used:
 - TSOP IR receiver
-- H-brdige
+- H-bridge
 - Geared mini DC motor
 - 3d printed motor mount
+
+
+Features of the system:
+- Scheduling (to make blinds close/open on user selected times)
+- Synchronization with NTP server.
+- Controlled with 38KHz remote
+- Simple webinterface (includes: open/close, firmware update, monitoring div. variables)
+
+
+Things that I want to add/improve:
+- Store user values on flash (the board has no eeprom)
+- Implement MQTT protocol (this will allow it talk with a broad range of smart-home products)
+- AP functionality on startup, in case of no known wifi's discovered.
