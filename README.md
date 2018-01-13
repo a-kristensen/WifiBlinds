@@ -20,3 +20,5 @@ Things that I want to add/improve:
 - Store user values on flash (the board has no eeprom)
 - Implement MQTT protocol (this will allow it talk with a broad range of smart-home products)
 - AP functionality on startup, in case of no known wifi's discovered.
+- PWM on the GPIO to the H-brdige.
+- Encoder feedback from motor.
