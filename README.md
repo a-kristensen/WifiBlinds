@@ -2,7 +2,7 @@
 This is a little project I made to automate my blinds in my apartment.
 The hardware platform is based on a Wemos D1 mini (which is based on the esp8266).
 
-The following components are used:
+The following components are used (all items can be bought from ebay):
 - TSOP IR receiver
 - H-bridge
 - Geared mini DC motor
