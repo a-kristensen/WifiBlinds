@@ -13,8 +13,7 @@ Features of the system:
 - Scheduling (to make blinds close/open on user selected times)
 - Synchronization with NTP server.
 - Controlled with 38KHz remote
-- Simple webinterface (includes: open/close, firmware update, monitoring div. variables)
-- Firmware update through webinterface
+- Webinterface (includes: open/close, firmware update, monitoring div. variables)
 
 
 Things that I want to add/improve:
