@@ -16,8 +16,8 @@
   #define WEB_DbgMsg
 #endif
 
-const char* ssid = "Deathstar";
-const char* password = "hailtothekingbaby";
+const char* ssid = "str_ssid";
+const char* password = "str_password";
 
 ESP8266WebServer server(80);
 
