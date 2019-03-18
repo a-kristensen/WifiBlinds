@@ -1,238 +1,187 @@
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include "web.h"
-#include "main.h"
-#include "motor.h"
-#include "datetime.h"
-#include "debug.h"
-#include "schedule.h"
+#include <functional>
+
 
 #define WEB_DBG
 #ifdef WEB_DBG
-  #define WEB_DbgMsg DbgMsg
+  #define WEB_DbgMsg DbgMsg("Web: "); DbgMsg
 #else
   #define WEB_DbgMsg
 #endif
 
-const char* ssid = "str_ssid";
-const char* password = "str_password";
+static String Str;
 
-ESP8266WebServer server(80);
-
-//prototypes
-void handleRoot();
-void handleNotFound();
-void handleCmdOpen();
-void handleCmdClose();
-void handleCmdResetPos();
-void handleGetPos();
-void handleSettings();
-
-
-void update1();
-void update2();
-
-void InitWeb()
-{
-  WiFi.begin(ssid, password);
-
-  /*if(MDNS.begin("akr_ww"))
-    Serial.println("MDNS responder started");*/
-
-  server.on("/", handleRoot);
-  server.on("/update", HTTP_POST, update1, update2);
-  server.on("/cmd_open", handleCmdOpen);
-  server.on("/cmd_close", handleCmdClose);
-  server.on("/cmd_reset_pos", handleCmdResetPos);
-  server.on("/get_pos", handleGetPos);
-  server.on("/settings", handleSettings);
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  WEB_DbgMsg("HTTP server started");
-
-  //wait for connection
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    WEB_DbgMsg(".");
-  }
-  WEB_DbgMsg("connected");
-}
-
-void WebTask(void)
-{
-  server.handleClient();
-}
-
-void handleSettings()
-{
-
-  String Str =
-"<!DOCTYPE html>\
-<head>\
-</head>\
-<body scroll=no>\
-<h1>Settings</h1>\
-<br><br><br>\
-<form action=\"settings\" method=\"POST\">\
-<input type=\"checkbox\" name=\"ena\" value=\"1\">\
-<input type=\"text\" name=\"rule_no\"> \
-<input type=\"text\" name=\"wd\"> \
-<input type=\"text\" name=\"hour\"> \
-<input type=\"text\" name=\"min\"> \
-<input type=\"text\" name=\"cmd\">\
-</select>\
-<select name=\"cmd\">\
-<option value=\"1\">close</option>\
-<option value=\"2\">open</option></select><br>\
-<input type=\"submit\" value=\"save to RAM\">\
-</form>\
-<form action=\"settings\" method=\"POST\">\
-<input type=\"submit\" value=\"commit to ROM\">\
-</form>\
-<br><br><br>\
-<a href=\"/\">main</a>\
-</body>\
-</html>";
-
-  server.send(200, "text/html", Str);
-
-
-  for(int i=0; i<server.args(); i++)
-  {
-    Serial.println(server.argName(i));
-    WEB_DbgMsg(" = ");
-    Serial.println(server.arg(i));
-    WEB_DbgMsg("\r\n");    
-  }
-
-}
-
-
-
-void handleRoot()
-{
-  char str[1200];
+/*void class_web::handleRoot(void)
+{ 
+  char str_hostname[20] = {0};
   int sec = millis() / 1000;
   int min = sec / 60;
   int hr = min / 60;
-  int days = hr / 24;
 
-  snprintf (str, 1200,
-  
+
+  if(m_WebServ.args())
+  {
+    parseArgs();
+    return;
+  }
+
+
+  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  String hostname = String(str_hostname);
+
+//<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>
+
+
+  Str =    
 "<!DOCTYPE html>\
+<html>\
 <head>\
-<title>WiFiBlinds</title>\
+<link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">\
+<script src=\"https://code.jquery.com/jquery-1.12.4.js\"></script>\
+<script src=\"https://code.jquery.com/ui/1.12.1/jquery-ui.js\"></script>\
+<title>"+ hostname +"</title>\
 </head>\
-<body scroll=no>\
-<h1>WifiBlinds</h1>\
-<div>Uptime: %02d:%02d:%02d:%02d</div>\
-<div>NTP time: %02u:%02u:%02u </div>\
-<div>NTP date: %s d. %2u. %s - %2u </div>\
-<div>SW ver: %01d.%02d</div>\
+<body>\
+<h1>"+ hostname +"</h1>\
+<div>Uptime: "+hr+":"+(min%60)+":"+(sec%60)+"</div>\
+<div>NTPtime: (w"+(**mPtr_dt).GetTime().tm_wday+") "+(**mPtr_dt).GetTime().tm_hour+":"+(**mPtr_dt).GetTime().tm_min+":"+(**mPtr_dt).GetTime().tm_sec+" </div>\
+<div>SW ver: "+(SW_VERSION/100)+"."+(SW_VERSION%100)+"</div>\
+<div>Build time: "+String(BUILD_DATE)+" - "+String(BUILD_TIME)+"</div>\
 <br>\
-<div id=\"motpos\">Mot pos: %d</div>\
-<div id=\"usrpos\">Usr pos: %d</div>\
+<div id=\"motpos\">Mot pos: "+(**m_ptrBlinds).GetPos()+"</div>\
+<div id=\"usrpos\">Usr pos: NONE</div>\
 <br><br>\
-<button type=\"button\" onclick=\"cmd_open()\" style=\"font-size:50px; height:100px; width:330px\">open</button>\
+<button type=\"button\" onclick=\"cmd('open')\" style=\"font-size:50px; height:100px; width:330px\">open</button>\
 <br><br>\
-<button type=\"button\" onclick=\"cmd_close()\" style=\"font-size:50px; height:100px; width:330px\">close</button>\
-<br><br><br><br>\
-<button type=\"button\" onclick=\"cmd_reset_pos()\">Reset Pos</button>\
-<br><br><br><br>\
-<a href=\"settings\">Settings</a>\
-<br><br><br><br>\
+<button type=\"button\" onclick=\"cmd('close')\" style=\"font-size:50px; height:100px; width:330px\">close</button>\
+<br><br>\
+<button type=\"button\" onclick=\"cmd('stop')\" style=\"font-size:50px; height:100px; width:330px\">stop</button>\
+<br><br>\
 <form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>\
 <script>\
 function cmd_open()\
 {\
 var xhttp = new XMLHttpRequest();\
-xhttp.open(\"GET\", \"cmd_open\", true);\
+xhttp.open(\"GET\", \"?getdata=uptime\", true);\
+xhttp.onreadystatechange = function(){\
+if (this.readyState == 4 && this.status == 200) {\
+alert(this.responseText);\
+}};\
 xhttp.send();\
 }\
-function cmd_close()\
+function cmd(c)\
 {\
 var xhttp = new XMLHttpRequest();\
-xhttp.open(\"GET\", \"cmd_close\", true);\
-xhttp.send();\
-}\
-function cmd_reset_pos()\
-{\
-var xhttp = new XMLHttpRequest();\
-xhttp.open(\"GET\", \"cmd_reset_pos\", true);\
+xhttp.open(\"GET\", \"?cmd=\"+c, true);\
 xhttp.send();\
 }\
 </script>\
 </body>\
-</html>",
+</html>";
 
-days, hr % 24, min % 60, sec % 60,
-GetTime().hour, GetTime().min, GetTime().sec,
-StrWeekDay[GetTime().wday], GetTime().day+1, StrMonth[GetTime().month], GetTime().year,
-SW_VERSION/100,SW_VERSION%100, MotPosTck, UserPosTck);
+  m_WebServ.send(200, "text/html", Str);
+}*/
 
-  server.send(200, "text/html", str);
+
+void class_web::handleRoot(void)
+{ 
+  char str_hostname[20] = {0};
+  int sec = millis() / 1000;
+  int min = sec / 60;
+  int hr = min / 60;
+
+
+  if(m_WebServ.args())
+  {
+    parseArgs();
+    return;
+  }
+
+
+  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  String hostname = String(str_hostname);
+
+//<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>
+
+
+  Str =    
+"<!DOCTYPE html>\
+<html>\
+<head>\
+<link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">\
+<script src=\"https://code.jquery.com/jquery-1.12.4.js\"></script>\
+<script src=\"https://code.jquery.com/ui/1.12.1/jquery-ui.js\"></script>\
+<title>"+ hostname +"</title>\
+</head>\
+<body>\
+<h1>"+ hostname +"</h1>\
+<div>Uptime: "+hr+":"+(min%60)+":"+(sec%60)+"</div>\
+<div>NTPtime: (w"+(**mPtr_dt).GetTime().tm_wday+") "+(**mPtr_dt).GetTime().tm_hour+":"+(**mPtr_dt).GetTime().tm_min+":"+(**mPtr_dt).GetTime().tm_sec+" </div>\
+<div>SW ver: "+(SW_VERSION/100)+"."+(SW_VERSION%100)+"</div>\
+<div>Build time: "+String(BUILD_DATE)+" - "+String(BUILD_TIME)+"</div>\
+<br>\
+<div id=\"motpos\">Mot pos: "+p_blinds->GetPos()+"</div>\
+<div id=\"usrpos\">Usr pos: NONE</div>\
+<br><br>\
+<button type=\"button\" onclick=\"cmd('open')\" style=\"font-size:50px; height:100px; width:330px\">open</button>\
+<br><br>\
+<button type=\"button\" onclick=\"cmd('close')\" style=\"font-size:50px; height:100px; width:330px\">close</button>\
+<br><br>\
+<button type=\"button\" onclick=\"cmd('stop')\" style=\"font-size:50px; height:100px; width:330px\">stop</button>\
+<br><br>\
+<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>\
+<script>\
+function cmd_open()\
+{\
+var xhttp = new XMLHttpRequest();\
+xhttp.open(\"GET\", \"?getdata=uptime\", true);\
+xhttp.onreadystatechange = function(){\
+if (this.readyState == 4 && this.status == 200) {\
+alert(this.responseText);\
+}};\
+xhttp.send();\
+}\
+function cmd(c)\
+{\
+var xhttp = new XMLHttpRequest();\
+xhttp.open(\"GET\", \"?cmd=\"+c, true);\
+xhttp.send();\
+}\
+</script>\
+</body>\
+</html>";
+
+  m_WebServ.send(200, "text/html", Str);
 }
 
-
-void handleNotFound()
+void class_web::handleNotFound(void)
 {
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += server.uri();
+  message += m_WebServ.uri();
   message += "\nMethod: ";
-  message += (server.method() == HTTP_GET)?"GET":"POST";
+  message += (m_WebServ.method() == HTTP_GET)?"GET":"POST";
   message += "\nArguments: ";
-  message += server.args();
+  message += m_WebServ.args();
   message += "\n";
-  for (uint8_t i=0; i<server.args(); i++){
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  for (uint8_t i=0; i<m_WebServ.args(); i++){
+    message += " " + m_WebServ.argName(i) + ": " + m_WebServ.arg(i) + "\n";
   }
-  server.send(404, "text/plain", message);
-}
-
-void handleCmdOpen()
-{
-  CmdOpen();
-  server.send(200, "text/plain", "");
-  WEB_DbgMsg("http: cmd_open");
-}
-
-void handleCmdClose()
-{
-  CmdClose();
-  server.send(200, "text/plain", "");
-  WEB_DbgMsg("http: cmd_close");
-}
-
-void handleCmdResetPos()
-{
-  CmdResetPos();
-  server.send(200, "text/plain", "");
-  WEB_DbgMsg("http: cmd_reset_pos");
-}
-
-void handleGetPos()
-{
-  server.send(200, "text/plain", String(MotPosTck));
-  WEB_DbgMsg("http: get_pos");
+  m_WebServ.send(404, "text/plain", message);
 }
 
 
-void update1()
+void class_web::update1(void)
 {
-  server.sendHeader("Connection", "close");
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.send(200, "text/plain", (Update.hasError())?"FAIL":"OK");
+  m_WebServ.sendHeader("Connection", "close");
+  m_WebServ.sendHeader("Access-Control-Allow-Origin", "*");
+  m_WebServ.send(200, "text/plain", (Update.hasError())?"FAIL":"OK");
   ESP.restart();
 }
-    
-void update2()
+
+void class_web::update2(void)
 {
-  HTTPUpload& upload = server.upload();
+  HTTPUpload& upload = m_WebServ.upload();
   if(upload.status == UPLOAD_FILE_START)
   {
     Serial.setDebugOutput(true);
@@ -268,12 +217,89 @@ void update2()
   yield();
 }
 
+class_web::class_web(class_datetime*& ptr_dt, class_param*& ref_param)
+{
+  mPtr_dt = &ptr_dt;
+  mPtr_param = &ref_param;
+}
+
+
+void class_web::TaskRun(void)
+{
+  m_WebServ.handleClient();
+}
+
+
+void class_web::TaskInit(void)
+{ 
+  m_WebServ.on("/", std::bind(&class_web::handleRoot, this) );
+  m_WebServ.on("/update", HTTP_POST, std::bind(&class_web::update1, this), std::bind(&class_web::update2, this));
+  m_WebServ.onNotFound( std::bind(&class_web::handleNotFound, this) );
+
+  m_WebServ.begin();
+  WEB_DbgMsg("Initialized\n");
+}
 
 
 
+void class_web::parseArgs(void)
+{
+  String replyStr = "";
+
+  if(m_WebServ.args())
+  {
+    WEB_DbgMsg("Query args: %u\n", m_WebServ.args());
+    for(int i =0; i<m_WebServ.args(); i++)
+    {
+      // format: arg (number) arg_string : value
+      WEB_DbgMsg("arg(%u) %s : %s\n", i, m_WebServ.argName(i).c_str(), m_WebServ.arg(i).c_str() );
+    }
 
 
+    // was a command received ?
+    if( m_WebServ.hasArg("cmd") )
+    {
+      if(m_WebServ.arg("cmd") == "open")
+      {
+        p_blinds->Open();
+        WEB_DbgMsg("cmd_open\n");
+      }
+      else if(m_WebServ.arg("cmd") == "close")
+      {
+        p_blinds->Close();
+        WEB_DbgMsg("cmd_close\n");
+      }
+      else if(m_WebServ.arg("cmd") == "stop")
+      {
+        p_blinds->Stop();
+        WEB_DbgMsg("cmd_stop\n");
+      }
+    }
 
+    // was a request for data received ?
+    if( m_WebServ.hasArg("getdata") )
+    {
+      if(m_WebServ.arg("getdata") == "pos")
+      {
+        replyStr = String(p_blinds->GetPos());
+        WEB_DbgMsg("get_pos\n");
+      }
+
+      else if(m_WebServ.arg("getdata") == "uptime")
+      {
+        int sec = millis() / 1000;
+        int min = sec / 60;
+        int hr = min / 60;
+
+        replyStr = String(hr) + ":" + String(min%60) + ":" + String(sec%60);
+        WEB_DbgMsg("get_pos\n");
+      }
+    }
+  }
+
+  // send reply back
+  m_WebServ.send(200, "text/plain", replyStr);
+}
 
 
 
@@ -290,4 +316,3 @@ void handleInline()
 
   server.send(200, "text/plain", "this works as well");
 }*/
-
