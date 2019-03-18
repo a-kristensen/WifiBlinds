@@ -1,21 +1,18 @@
 #ifndef _SCHEDULE_h
 #define _SCHEDULE_h
 
-#if defined(ARDUINO) && ARDUINO >= 100
-  #include "arduino.h"
-#else
-  #include "WProgram.h"
-#endif
+#include <stdint.h>
+#include "class_defs.h"
+#include "datetime.h"
+#include "blinds.h"
 
-#define NO_OF_RULES 14
 
 typedef struct
 {
-  unsigned char wd;
-  unsigned char h;
-  unsigned char m;
-  unsigned char cmd;
-  unsigned char ena;
+  uint8_t wd;
+  uint8_t h;
+  uint8_t m;
+  uint8_t cmd;
 } rule_item;
 
 enum WeekDay
@@ -35,10 +32,35 @@ enum ScheduleCmd
   SCHEDULE_OPEN = 2
 };
 
-void InitSchedule(void);
-void ScheduleTask(void);
+const char* const StrWeekDay[] = 
+{
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday"
+};
 
-extern unsigned char ScheduleMinFlag;
+class class_schedule : public Task, public Timer1min, public class_UserOfBlinds
+{
+  private:
+    bool              m_MinuteFlag;
+    bool              m_RulesActive;
+    uint8_t           m_noOfRules;
+    tm                m_currT;
+    rule_item*        m_ptrRules;
+    class_datetime**  m_datetime;
+  
+  public:
+    class_schedule(class_datetime*&);
+
+    //inherited
+    void TaskRun(void);
+    void TaskInit(void);
+    void Tick1min(void);
+};
+
 
 #endif
-

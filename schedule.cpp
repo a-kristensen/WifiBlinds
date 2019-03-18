@@ -1,76 +1,79 @@
 #include "schedule.h"
-#include "datetime.h"
 #include "main.h"
-#include "debug.h"
+
 
 #define SCHEDULE_DBG
 #ifdef SCHEDULE_DBG
-  #define SCHEDULE_DbgMsg DbgMsg
+  #define SCHEDULE_DbgMsg(...) DbgMsg("Schedule: "); DbgMsg(__VA_ARGS__)
 #else
   #define SCHEDULE_DbgMsg
 #endif
 
-unsigned char RulesActive;
-unsigned char noOfRules;
-unsigned char ScheduleMinFlag;
 
-DateTime currT;
-rule_item* ptrRules;
 
-void InitSchedule(void)
+class_schedule::class_schedule(class_datetime*& ref_dt)
 {
-  RulesActive = 1;
-  ptrRules = new rule_item[NO_OF_RULES];
-
-  //wd, h, m, cmd
-  for(unsigned char i = 0; i<7; i++)
-  {
-    ptrRules[i*2] = (rule_item){i+1, 8, 0, SCHEDULE_OPEN, 1};
-    ptrRules[(i*2)+1] = {i+1, 19, 0, SCHEDULE_CLOSE, 1};
-  }
+  m_datetime = &ref_dt;
 }
 
-void ScheduleTask(void)
+void class_schedule::TaskRun(void)
 {
-
-  
-  if(RulesActive)
+  if(m_MinuteFlag)
   {
-    if(validTime)
+    if(m_RulesActive)
     {
-      if(ScheduleMinFlag)
+      if((**m_datetime).isTimeValid())
       {
-        currT = GetTime();        
-        for(int i=0; i<NO_OF_RULES; i++)
+        m_currT = (**m_datetime).GetTime();
+        
+        for(int i=0; i<m_noOfRules; i++)
         {
-          //are current rule enabled?
-          if(ptrRules[i].ena == 1)
+          if(m_currT.tm_wday == m_ptrRules[i].wd)
           {
-            if(currT.wday == ptrRules[i].wd)
+            if(m_currT.tm_hour == m_ptrRules[i].h)
             {
-              if(currT.hour == ptrRules[i].h)
+              if(m_currT.tm_min == m_ptrRules[i].m)
               {
-                if(currT.min == ptrRules[i].m)
+                if(m_ptrRules[i].cmd == 1)
                 {
-                  if(ptrRules[i].cmd == 1)
-                  {
-                    CmdClose();
-                    SCHEDULE_DbgMsg("schedule: cmd_close\n");
-                  }
-                  else if(ptrRules[i].cmd == 2)
-                  {
-                    CmdOpen();
-                    SCHEDULE_DbgMsg("schedule: cmd_open\n");
-                  }
+                  p_blinds->Close();
+                  SCHEDULE_DbgMsg("cmd_close. Rule# %u. Time: %02u:%02u\n", i, m_currT.tm_hour, m_currT.tm_min);
+                }
+                else if(m_ptrRules[i].cmd == 2)
+                {
+                  p_blinds->Open();
+                  SCHEDULE_DbgMsg("cmd_open. Rule# %u. Time: %02u:%02u\n", i, m_currT.tm_hour, m_currT.tm_min);
                 }
               }
             }
           }
         }
-        //all rules carried out, wait for next minute
-        ScheduleMinFlag = 0;
       }
     }
+    
+    //toggle flag
+    m_MinuteFlag = false;
   }
 }
 
+void class_schedule::TaskInit(void)
+{
+  m_RulesActive = true;
+  m_noOfRules = 14;
+  m_ptrRules = new rule_item[m_noOfRules];
+
+
+  //wd, h, m, cmd
+  for(uint8_t i = 0; i<7; i++)
+  {
+    m_ptrRules[i*2] = {(uint8_t)(i+1), 7, 0, SCHEDULE_OPEN};
+    m_ptrRules[(i*2)+1] = {(uint8_t)(i+1), 19, 0, SCHEDULE_CLOSE};
+  }
+
+  SCHEDULE_DbgMsg("Initialized\n");
+}
+
+void class_schedule::Tick1min(void)
+{
+  m_MinuteFlag = true;
+}
