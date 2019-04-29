@@ -17,8 +17,6 @@ typedef enum EVENT_TYPE
 } EVENT_TYPE;
 
 //--------- forward declarations ---------
-class Observer;
-class Subject;
 class Task;
 class Timer1ms;
 class Timer1sec;
@@ -102,27 +100,6 @@ class Timer1min
 
 
 
-class Subject
-{
-  private:
-	  vector <Observer*> m_obs;
-
-  public:
-    void Attach(Observer *o);
-	  void Detach(Observer *o);
-
-  protected:
-	  void Notify(EVENT_TYPE t, unsigned int d);
-};
-	
-class Observer
-{
-  public:
-	  virtual void onEvent(EVENT_TYPE t, unsigned int d) = 0;
-};
-
-
-
 template <class T>
 class Singleton
 {
@@ -145,6 +122,38 @@ class Singleton
 //implicit instantiation
 template<class T>
 T* Singleton<T>::m_instance = NULL;
+
+
+
+
+template <class T>
+class Observer
+{
+  public:
+    Observer() {}
+    virtual ~Observer() {}
+    virtual void onEvent(T) = 0;
+};
+
+template <class T>
+class Subject
+{
+  public:
+    Subject() {}
+    virtual ~Subject() {}
+    void attach (Observer<T> *observer)
+    {
+      m_observers.push_back(observer);
+    }
+    void notify (T param)
+    {
+      for (auto it=m_observers.begin(); it!=m_observers.end(); it++) 
+        (*it)->onEvent(param);
+    }
+  private:
+    std::vector<Observer<T>*> m_observers;
+};
+
 
 
 #endif

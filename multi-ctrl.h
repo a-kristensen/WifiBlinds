@@ -13,8 +13,6 @@ using namespace std;
 
 
 
-
-
 typedef struct {
   IPAddress   ip;
   uint8_t     group;
@@ -57,7 +55,7 @@ class class_multi : public Task, public Timer1sec, public class_UserOfBlinds
     //void SetDeviceGroup(unsigned int, unsigned int);
 
     //inherited
-    void Tick1sec(void);
+    void Tick1sec(void) final;
     void TaskRun (void);
     void TaskInit (void);
 };

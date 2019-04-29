@@ -48,10 +48,10 @@ void class_mqtt::callback(char* topic, uint8_t* payload, unsigned int length)
 
 class_mqtt::class_mqtt()
 { }
-
+/*
 void class_mqtt::onEvent(EVENT_TYPE t, unsigned int d)
 {}
-
+*/
 void class_mqtt::TaskInit(void)
 {
   MQTTState = STATE_MQTT_STOPPED;

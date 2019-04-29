@@ -1,6 +1,10 @@
 #ifndef _WEB_h
 #define _WEB_h
 
+#include <vector>
+#include <utility>
+#include <string>
+
 #include <ESP8266WebServer.h>
 #include "arduino.h"
 #include "main.h"
@@ -25,7 +29,13 @@ class class_web : public Task, public class_UserOfBlinds
     void handleGetPos(void);
     void handleCmdStop(void);
    
+    void sendIndexHtml(void);
+    void sendJsFile(void);
+    void sendCssFile(void);
+    void appendMenu(void);
     void parseArgs(void);
+
+    String makeJSONMsg(vector< pair<String, String> >);
 
     void update1(void);
     void update2(void);

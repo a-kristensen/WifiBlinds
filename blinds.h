@@ -19,19 +19,12 @@ typedef enum CURTAIN_STATE
 } CURTAIN_STATE;
 
 
-typedef enum MOTOR_STATE
+typedef enum
 {
-  STATE_MOTOR_STOP,
-  STATE_MOTOR_RUN_OPEN,
-  STATE_MOTOR_RUN_CLOSE
-} MOTOR_STATE;
-
-typedef enum MOTOR_EVENTS
-{
-  EVENT_MOTOR_STOPPED,
-  EVENT_MOTOR_OPENING,
-  EVENT_MOTOR_CLOSING
-} MOTOR_EVENTS;
+  MOTOR_STOPPED,
+  MOTOR_OPENING,
+  MOTOR_CLOSING
+} EventMotorDrv_t;
 
 
 class class_motdrv;
@@ -52,7 +45,7 @@ class class_UserOfBlinds
 
 //this is an abstraction layer
 //it abstracts away from motor/postion to curtains
-class class_blinds : public Task, public Timer1ms, public Subject, public Observer, public Singleton<class_blinds>
+class class_blinds : public Task, public Timer1ms, public Singleton<class_blinds>, public Observer<EventMotorDrv_t>
 {
   private:
     void            m_Close(void);
@@ -62,9 +55,9 @@ class class_blinds : public Task, public Timer1ms, public Subject, public Observ
     intf_position*  m_ptrPos;
     class_motdrv*   m_ptrMotdrv;
 
-    volatile MOTOR_STATE    m_MotorSt;
-    volatile uint8_t        m_ReqPos;         // requested position (0 - 100)
-    volatile bool           m_PosCtrl;        // state bit, if position has been requested
+    volatile EventMotorDrv_t  m_MotorSt;
+    volatile uint8_t          m_ReqPos;         // requested position (0 - 100)
+    volatile bool             m_PosCtrl;        // state bit, if position has been requested
 
     CURTAIN_STATE           m_CurtainSt;
 
@@ -82,23 +75,23 @@ class class_blinds : public Task, public Timer1ms, public Subject, public Observ
     void TaskRun(void);
     void TaskInit(void);
     void Tick1ms(void);
-    void onEvent(EVENT_TYPE, unsigned int);
+    void onEvent(EventMotorDrv_t);
 };
 
 
 
-class class_motdrv : public Subject
+class class_motdrv : public Subject<EventMotorDrv_t>
 {
   private:
-    MOTOR_STATE     m_MotorSt;
-    uint8_t         m_MotorSpeed;   //this will be set one time, and used on subsequent calls
+    EventMotorDrv_t   m_MotorSt;
+    uint8_t           m_MotorSpeed;   //this will be set one time, and used on subsequent calls
 
   public:
     class_motdrv(void);
-    void            Close(void);
-    void            Open(void);
-    void            Stop(void); 
-    MOTOR_STATE     GetMotorState(void);
+    void              Close(void);
+    void              Open(void);
+    void              Stop(void); 
+    EventMotorDrv_t   GetMotorState(void);
 };
 
 
@@ -109,18 +102,23 @@ class intf_position
     //absolute, linear position: 0 - 100
     virtual double      GetAbsPos(void) = 0;     
     virtual double      GetRaw(void) = 0;
+
     virtual void        Calib_ResetPos(void) = 0;
     virtual void        Calib_SetMax(void) = 0;
+
+    //this is still being tried out
+    //virtual bool        startSelfDetect(void);
+    //virtual void        startAutoCalibrate(void);
 };
 
 
-class class_position_timebased : public intf_position, public Timer1ms, public Observer
+class class_position_timebased : public intf_position, public Timer1ms, public Observer<EventMotorDrv_t>
 {
   private:
     volatile signed long  m_posTck;
     signed long           m_maxTck;
     double                m_factor;   //factor to convert from ticks to pos0-100
-    MOTOR_STATE           m_state;
+    EventMotorDrv_t       m_state;
 
     void m_calcFactor(void);
 
@@ -129,13 +127,13 @@ class class_position_timebased : public intf_position, public Timer1ms, public O
 
     //inherited
     void        Tick1ms(void);
-    void        onEvent(EVENT_TYPE, unsigned int);
+    void        onEvent(EventMotorDrv_t);
 
     //inherited interface
-    double      GetAbsPos(void);
-    double      GetRaw(void);
-    void        Calib_ResetPos(void);
-    void        Calib_SetMax(void);
+    double      GetAbsPos(void) final;
+    double      GetRaw(void) final;
+    void        Calib_ResetPos(void) final;
+    void        Calib_SetMax(void) final;
 };
 
 

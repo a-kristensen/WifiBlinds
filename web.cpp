@@ -11,92 +11,34 @@
 
 static String Str;
 
-/*void class_web::handleRoot(void)
-{ 
-  char str_hostname[20] = {0};
-  int sec = millis() / 1000;
-  int min = sec / 60;
-  int hr = min / 60;
-
-
-  if(m_WebServ.args())
-  {
-    parseArgs();
-    return;
-  }
-
-
-  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
-  String hostname = String(str_hostname);
-
-//<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>
-
-
-  Str =    
-"<!DOCTYPE html>\
-<html>\
-<head>\
-<link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">\
-<script src=\"https://code.jquery.com/jquery-1.12.4.js\"></script>\
-<script src=\"https://code.jquery.com/ui/1.12.1/jquery-ui.js\"></script>\
-<title>"+ hostname +"</title>\
-</head>\
-<body>\
-<h1>"+ hostname +"</h1>\
-<div>Uptime: "+hr+":"+(min%60)+":"+(sec%60)+"</div>\
-<div>NTPtime: (w"+(**mPtr_dt).GetTime().tm_wday+") "+(**mPtr_dt).GetTime().tm_hour+":"+(**mPtr_dt).GetTime().tm_min+":"+(**mPtr_dt).GetTime().tm_sec+" </div>\
-<div>SW ver: "+(SW_VERSION/100)+"."+(SW_VERSION%100)+"</div>\
-<div>Build time: "+String(BUILD_DATE)+" - "+String(BUILD_TIME)+"</div>\
-<br>\
-<div id=\"motpos\">Mot pos: "+(**m_ptrBlinds).GetPos()+"</div>\
-<div id=\"usrpos\">Usr pos: NONE</div>\
-<br><br>\
-<button type=\"button\" onclick=\"cmd('open')\" style=\"font-size:50px; height:100px; width:330px\">open</button>\
-<br><br>\
-<button type=\"button\" onclick=\"cmd('close')\" style=\"font-size:50px; height:100px; width:330px\">close</button>\
-<br><br>\
-<button type=\"button\" onclick=\"cmd('stop')\" style=\"font-size:50px; height:100px; width:330px\">stop</button>\
-<br><br>\
-<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>\
-<script>\
-function cmd_open()\
-{\
-var xhttp = new XMLHttpRequest();\
-xhttp.open(\"GET\", \"?getdata=uptime\", true);\
-xhttp.onreadystatechange = function(){\
-if (this.readyState == 4 && this.status == 200) {\
-alert(this.responseText);\
-}};\
-xhttp.send();\
-}\
-function cmd(c)\
-{\
-var xhttp = new XMLHttpRequest();\
-xhttp.open(\"GET\", \"?cmd=\"+c, true);\
-xhttp.send();\
-}\
-</script>\
-</body>\
-</html>";
-
-  m_WebServ.send(200, "text/html", Str);
-}*/
-
 
 void class_web::handleRoot(void)
-{ 
+{
+  if(m_WebServ.args())
+  {
+    parseArgs();
+  }
+  else
+  {
+    sendIndexHtml();
+  }
+}
+
+//this will append the menu in jquery
+void class_web::appendMenu(void)
+{
+  // home  ++  status/info  ++  configuration  ++  system tools
+
+
+
+}
+
+void class_web::sendIndexHtml(void)
+{
   char str_hostname[20] = {0};
   int sec = millis() / 1000;
   int min = sec / 60;
   int hr = min / 60;
-
-
-  if(m_WebServ.args())
-  {
-    parseArgs();
-    return;
-  }
-
 
   (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
   String hostname = String(str_hostname);
@@ -233,6 +175,10 @@ void class_web::TaskRun(void)
 void class_web::TaskInit(void)
 { 
   m_WebServ.on("/", std::bind(&class_web::handleRoot, this) );
+
+  m_WebServ.on("/script.js", std::bind(&class_web::sendJsFile, this) );
+  m_WebServ.on("/style.js", std::bind(&class_web::sendCssFile, this) );
+
   m_WebServ.on("/update", HTTP_POST, std::bind(&class_web::update1, this), std::bind(&class_web::update2, this));
   m_WebServ.onNotFound( std::bind(&class_web::handleNotFound, this) );
 
@@ -245,6 +191,10 @@ void class_web::TaskInit(void)
 void class_web::parseArgs(void)
 {
   String replyStr = "";
+  char str_hostname[20] = {0};
+
+  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  String hostname = String(str_hostname);
 
   if(m_WebServ.args())
   {
@@ -297,11 +247,65 @@ void class_web::parseArgs(void)
     }
   }
 
+  replyStr = makeJSONMsg({
+    {"pos",       String(p_blinds->GetPos())},
+    {"uptime",    String(millis())},
+    {"buildtime", String(BUILD_DATE)+" - "+String(BUILD_TIME)},
+    {"ntptime",   "(w" +String((**mPtr_dt).GetTime().tm_wday)+") "+(**mPtr_dt).GetTime().tm_hour+":"+(**mPtr_dt).GetTime().tm_min+":"+(**mPtr_dt).GetTime().tm_sec},
+    {"swver",     String(SW_VERSION/100)+"."+String(SW_VERSION%100)},
+    {"name",      hostname}
+  });
+
+
   // send reply back
   m_WebServ.send(200, "text/plain", replyStr);
+
+  //text/html             .html
+  //text/plain            .txt
+  //text/css              .css format
+  //text/javascript       .js files
+  //application/json      .json format
 }
 
 
+String class_web::makeJSONMsg(vector< pair<String, String> > v_str)
+{
+  String r = "{";
+
+/*{
+  "pos": "22",
+  "uptime": "19:53:21",
+  "buildtime": "Apr 15 2019 - 16:52:35",
+  "ntptime": "0:1:2"
+}*/
+
+  for (auto it = v_str.begin(); it != v_str.end(); ++it)
+  {
+    r += "\"" + it->first + "\": \"" + it->second + "\"";
+
+    if(it != v_str.end()-1)
+      r += ", ";
+  }
+  r += "}";
+
+  return r;
+}
+
+
+
+
+
+void class_web::sendJsFile(void)
+{
+  String replyStr = "the javascript file";
+  m_WebServ.send(200, "text/javascript", replyStr);
+}
+
+void class_web::sendCssFile(void)
+{
+  String replyStr = "the css file";
+  m_WebServ.send(200, "text/css", replyStr);
+}
 
 
 /*

@@ -1,0 +1,94 @@
+/*
+.nnn	class selector
+#nnn	id selector
+*/
+
+body {
+  background-color: #262626;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+  background-color: #B37C00;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 30px;
+}
+
+/*avoid line break for div-text*/
+div {
+  display: inline;
+}
+
+button:hover {
+  background-color: #FFC133;
+  color: #000000;
+}
+
+a:link, a:visited {
+  background-color: transparent;
+  color: #000000;
+  padding: 2px 0px;
+  text-decoration: none;
+  display: inline-block;
+  width: 100%;
+}
+
+a:hover, a:active {
+  background-color: #FFC133;
+}
+
+.item1 {
+  grid-area: head;
+  background-color: #d9d9d9;
+  text-align: center;
+  font-size: 40px;
+  color: #000000;
+  padding: 30px;
+}
+  
+.item2 {
+  grid-area: menu;
+  background-color: #d9d9d9;
+  color: #000000;
+  padding: 15px 15px;
+  font-size: 15px;
+}
+
+.item3 {
+  grid-area: main;
+  background-color: #ffffff;
+  padding: 15px 15px;
+  font-size: 15px;
+  color: #000000;
+}
+
+.item5 {
+  grid-area: foot;
+  background-color: #d9d9d9;
+  padding: 5px 15px;
+  font-size: 12px;
+  color: #000000;
+  text-align: center;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-areas:
+    'head head head head head head'
+    'menu main main main main main'
+    'foot foot foot foot foot foot';
+  grid-gap: 5px;
+  background-color: transparent;
+  padding: 0px;
+  grid-template-columns: 250px 250px 250px 250px;
+  grid-template-rows: auto auto auto;
+  justify-content: center;
+}
+
+.grid-container > div {
+}

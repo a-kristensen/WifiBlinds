@@ -43,6 +43,17 @@ const char* const StrWeekDay[] =
   "Sunday"
 };
 
+
+typedef enum {
+  FIRST_VAL = 0,
+  SECOND_VAL
+} someEnum1_t;
+
+typedef enum {
+  FIRST22_VAL = 0,
+  SECOND22_VAL
+} someEnum2_t;
+
 class class_schedule : public Task, public Timer1min, public class_UserOfBlinds
 {
   private:

@@ -1,3 +1,5 @@
+
+//#include <ThingerESP8266.h>
 #include "thinger.h"
 #include "main.h"
 

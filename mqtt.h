@@ -23,7 +23,7 @@ typedef enum MQTT_STATE
   STATE_MQTT_STOPPED = 3
 } MQTT_STATE;
 
-class class_mqtt : public Task, public Observer
+class class_mqtt : public Task//, public Observer
 {
   private:
     WiFiClient espClient;
@@ -40,7 +40,7 @@ class class_mqtt : public Task, public Observer
     class_mqtt();
     void TaskInit(void);
     void TaskRun(void);
-    void onEvent(EVENT_TYPE, unsigned int);
+    //void onEvent(EVENT_TYPE, unsigned int);
 };
 
 

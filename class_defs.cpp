@@ -106,32 +106,3 @@ void TimedTask::TaskInit(void)
   m_prevUs = m_maxUs = m_minUs = m_avgUs = 0;
   ptr_task->TaskInit();
 }
-
-
-
-
-
-
-
-void Subject::Notify(EVENT_TYPE t, unsigned int d)
-{
-  for (auto o = m_obs.begin(); o != m_obs.end(); ++o)
-    (*o)->onEvent(t, d);
-}
-
-void Subject::Attach(Observer *o)
-{
-  m_obs.push_back(o);
-}
-
-void Subject::Detach(Observer *obs)
-{
-  for (auto o = m_obs.begin(); o != m_obs.end(); ++o)
-    if (obs == *o)
-      m_obs.erase(o);
-}
-
-
-
-    
-

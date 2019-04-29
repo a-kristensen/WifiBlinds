@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="script.js"></script>
+</head>
+<body>
+
+
+<div class="grid-container">
+  <div class="item1">WifiBlinds | #</div>
+  <div class="item2">
+  <a href="?nav=home">Home</a> <br>
+  
+  Settings <br>
+  <a href="?nav=wifi">++ Wifi</a><br>
+  <a href="?nav=ir">++ IR remote</a><br>
+  <a href="?nav=sched">++ Schedule</a><br>
+  <a href="?nav=time">++ Time</a><br>
+  <a href="?nav=mqtt">++ MQTT</a><br>
+  <a href="?nav=multi">++ Multi-control</a><br>
+  
+  <a href="?nav=stat">Status</a> <br>
+ 
+  Tools <br>
+  <a href="?nav=fw">++ Firmware update</a><br>
+  <a href="?nav=pos">++ Pos. method</a>
+  </div>
+  <div class="item3">
+  
+    Position: <div id="pos">0</div> <br>
+	<progress id="prgs" max="100" value="0"></progress>
+	
+	<br><br>
+	
+  
+    <button onclick="cmd('open')">open</button> 
+    <button onclick="cmd('close')">close</button> 
+    <button onclick="cmd('stop')">stop</button>
+	
+	<br><br>
+  
+    Main <br><br> Main <br><br> Main <br><br> Main <br><br>
+	Main <br><br> Main <br><br> Main <br><br> Main <br><br>
+	
+  </div>  
+  <div class="item5">
+    Uptime: <div id="uptm">hh:mm:ss</div>  					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    NTPtime: <div id="ntptm">(w0) hh:mm:ss</div>   			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    SW ver: <div id="swver">n.n</div>							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    Build time: <div id="buildtm">Apr dd yyyy - hh:mm:ss</div>
+  </div>
+</div>
+
+
+</body>
+</html>

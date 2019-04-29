@@ -13,7 +13,7 @@ typedef enum WIFI_STATE {
 } WIFI_STATE;
 
 
-class class_wifi : public Task, public Subject
+class class_wifi : public Task, public Subject<WIFI_STATE>
 {
   private:
     class_param**  mPtr_param;

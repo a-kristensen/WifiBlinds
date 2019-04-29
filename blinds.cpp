@@ -24,7 +24,7 @@ class_blinds::class_blinds(void)
   m_ptrPos = new class_position_timebased(m_ptrMotdrv);
 
   //register to motor events
-  m_ptrMotdrv->Attach(this);
+  m_ptrMotdrv->attach(this);
 }
 
 void class_blinds::Tick1ms(void)
@@ -33,7 +33,7 @@ void class_blinds::Tick1ms(void)
 void class_blinds::TaskRun(void)
 {
   //bottom limit
-  if ((m_ptrPos->GetAbsPos() < 0) && (m_MotorSt == STATE_MOTOR_RUN_CLOSE))
+  if ((m_ptrPos->GetAbsPos() < 0) && (m_MotorSt == MOTOR_CLOSING))
   {
     Stop();
     m_CurtainSt = STATE_CURTAIN_BOTTOM;
@@ -54,7 +54,7 @@ void class_blinds::TaskRun(void)
   }
   
   //max limit
-  if ((m_ptrPos->GetAbsPos() >= 100) && (m_MotorSt == STATE_MOTOR_RUN_OPEN))
+  if ((m_ptrPos->GetAbsPos() >= 100) && (m_MotorSt == MOTOR_OPENING))
   {
     Stop();
     m_CurtainSt = STATE_CURTAIN_MAX;
@@ -66,7 +66,7 @@ void class_blinds::TaskInit(void)
 {
   m_PosCtrl = false;
   m_ReqPos = 0;
-  m_MotorSt = STATE_MOTOR_STOP;
+  m_MotorSt = MOTOR_STOPPED;
   m_CurtainSt = STATE_CURTAIN_BOTTOM;
 
   MOTOR_DbgMsg("Initialized\n");
@@ -76,7 +76,7 @@ void class_blinds::m_Open(void)
 {
   if (m_ptrPos->GetAbsPos() < 100)
   {
-    m_MotorSt = STATE_MOTOR_RUN_OPEN;
+    m_MotorSt = MOTOR_OPENING;
     m_PosCtrl = false;
     m_CurtainSt = STATE_CURTAIN_RUN_OPEN;
     m_ptrMotdrv->Open();
@@ -87,7 +87,7 @@ void class_blinds::m_Close(void)
 {
   if (m_ptrPos->GetAbsPos() > 0)
   {
-    m_MotorSt = STATE_MOTOR_RUN_OPEN;
+    m_MotorSt = MOTOR_CLOSING;
     m_PosCtrl = false;
     m_CurtainSt = STATE_CURTAIN_RUN_CLOSE;
     m_ptrMotdrv->Close();
@@ -95,7 +95,7 @@ void class_blinds::m_Close(void)
 }
 void class_blinds::m_Stop(void)
 {
-  m_MotorSt = STATE_MOTOR_STOP;
+  m_MotorSt = MOTOR_STOPPED;
   m_PosCtrl = false;
   m_ptrMotdrv->Stop();
 }
@@ -151,10 +151,9 @@ void class_blinds::Stop(void)
   m_CurtainSt = STATE_CURTAIN_USERPOS;
 }
 
-void class_blinds::onEvent(EVENT_TYPE e, unsigned int d)
+void class_blinds::onEvent(EventMotorDrv_t e)
 {
-  if(EVENT_MOTOR_DRV == e)
-    m_MotorSt = (MOTOR_STATE)d;
+  m_MotorSt = e;
 }
 
 //                           blinds
@@ -169,37 +168,37 @@ class_motdrv::class_motdrv(void)
 {
   pinMode(PIN_IA, OUTPUT);
   pinMode(PIN_IB, OUTPUT);
-  m_MotorSt = STATE_MOTOR_STOP;
+  m_MotorSt = MOTOR_STOPPED;
 }
 
 void class_motdrv::Close(void)
 {
   digitalWrite(PIN_IA, HIGH);
-  m_MotorSt = STATE_MOTOR_RUN_CLOSE;
+  m_MotorSt = MOTOR_CLOSING;
   digitalWrite(PIN_IB, LOW);
-  Notify(EVENT_MOTOR_DRV, (unsigned int)EVENT_MOTOR_CLOSING);
+  notify(MOTOR_CLOSING);
   MOTOR_DbgMsg("RUN_CLOSE\n");
 }
 
 void class_motdrv::Open(void)
 {
   digitalWrite(PIN_IA, LOW);
-  m_MotorSt = STATE_MOTOR_RUN_OPEN;
+  m_MotorSt = MOTOR_OPENING;
   digitalWrite(PIN_IB, HIGH);
-  Notify(EVENT_MOTOR_DRV, (unsigned int)EVENT_MOTOR_OPENING);
+  notify(MOTOR_OPENING);
   MOTOR_DbgMsg("RUN_OPEN\n");
 }
 
 void class_motdrv::Stop(void)
 {
   digitalWrite(PIN_IA, LOW);
-  m_MotorSt = STATE_MOTOR_STOP;
+  m_MotorSt = MOTOR_STOPPED;
   digitalWrite(PIN_IB, LOW);
-  Notify(EVENT_MOTOR_DRV, (unsigned int)EVENT_MOTOR_STOPPED);
+  notify(MOTOR_STOPPED);
   MOTOR_DbgMsg("STOP\n");
 }
 
-MOTOR_STATE class_motdrv::GetMotorState(void)
+EventMotorDrv_t class_motdrv::GetMotorState(void)
 {
   return m_MotorSt;
 }
@@ -219,8 +218,8 @@ class_position_timebased::class_position_timebased(class_motdrv* motdrv)
   m_posTck = 0;
   m_maxTck = POS_MAX_TCK_OPEN;
 
-  m_state = STATE_MOTOR_STOP;
-  motdrv->Attach(this);
+  m_state = MOTOR_STOPPED;
+  motdrv->attach(this);
   m_calcFactor();
 }
 
@@ -234,18 +233,15 @@ void class_position_timebased::Tick1ms(void)
   //maintain position
   switch(m_state)
   {
-    case STATE_MOTOR_RUN_OPEN:   m_posTck++;  break;
-    case STATE_MOTOR_RUN_CLOSE:  m_posTck--;  break;
+    case MOTOR_OPENING:   m_posTck++;  break;
+    case MOTOR_CLOSING:  m_posTck--;  break;
     default: break;
   }
 }
 
-void class_position_timebased::onEvent(EVENT_TYPE t, unsigned int d)
+void class_position_timebased::onEvent(EventMotorDrv_t e)
 {
-  if(t == EVENT_MOTOR_DRV)
-  {
-    m_state = (MOTOR_STATE)d;
-  }
+  m_state = e;
 }
 
 double class_position_timebased::GetAbsPos(void)
