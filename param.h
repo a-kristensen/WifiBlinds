@@ -7,24 +7,31 @@
 #include "param.h"
 
 
-typedef enum MEMORY_ID {
-  MEMID_WIFI_SSID,
-  MEMID_WIFI_PASS,
-  MEMID_HOSTNAME
-} MEMORY_ID;
-
-typedef enum MEMORY_TYPE {
-  T_BYTE = 0,
-  T_INT = 1,
-  T_FLOAT = 2,
-  T_STR20 = 3
-} MEMORY_TYPE;
+typedef enum {
+  MEMID_SCHED_ENA,          // enable
+  MEMID_SCHED_RULES,        // all rules
+////////////////////////
+  MEMID_MULTI_GROUP,        // member of group
+////////////////////////
+  MEMID_IR_ENA,             // enable
+  MEMID_IR_CODE_THIS,       // ir code to control the internal motor
+  MEMID_IR_ALL,             // ir code to control all blinds on network
+  MEMID_IR_GROUP_NUM,       // group num to be controlled by group code
+  MEMID_IR_GROUP_CODE,      // ir code for group number
+////////////////////////
+  MEMID_WIFI_SSID,          // wifi ssid
+  MEMID_WIFI_PASS,          // password
+////////////////////////
+  MEMID_HOSTNAME,           // name of blinds
+////////////////////////
+  MEMID_CRC_ADDR            // crc for all memory id's 
+} MemoryId_t;
 
 typedef struct {
-  MEMORY_ID     Id;
-  MEMORY_TYPE   Type;
-  unsigned int  Addr;
-} MEMORY_ITEM;
+  MemoryId_t  Id;
+  uint8_t     size;
+  uint8_t     addr;
+} MemoryItem_t;
 
 
 
@@ -32,15 +39,18 @@ class class_param : public Task
 {
   private:
 
+    bool findAddrId(MemoryId_t);
+    uint32_t calcCrc32(uint8_t*, uint32_t);
+    uint32_t calcCrc32OfMem(void);
 
   public:
     class_param(void);
     void TaskInit(void);
     void TaskRun(void);
 
-    void GetId(MEMORY_ID, uint8_t* dptr, uint8_t len);
-    void SetId(MEMORY_ID, vector<uint8_t>);
-    void Save(void);
+    bool getId(MemoryId_t, uint8_t* buf);
+    bool setId(MemoryId_t, uint8_t* buf);
+    void saveAll(void);
 };
 
 

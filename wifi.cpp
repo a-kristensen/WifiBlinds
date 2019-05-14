@@ -58,10 +58,9 @@ void class_wifi::TaskRun(void)
 void class_wifi::TaskInit(void)
 {
   char str_hostname[20] = {0};
-  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  (**mPtr_param).getId(MEMID_HOSTNAME, (uint8_t*)str_hostname);
 
   WiFi.hostname(str_hostname);
   WiFi.mode(WIFI_STA);
   WIFI_DbgMsg("Initialized\n");
 }
-

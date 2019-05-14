@@ -40,7 +40,7 @@ void class_web::sendIndexHtml(void)
   int min = sec / 60;
   int hr = min / 60;
 
-  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  (**mPtr_param).getId(MEMID_HOSTNAME, (uint8_t*)str_hostname);
   String hostname = String(str_hostname);
 
 //<script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>
@@ -193,7 +193,7 @@ void class_web::parseArgs(void)
   String replyStr = "";
   char str_hostname[20] = {0};
 
-  (**mPtr_param).GetId(MEMID_HOSTNAME, (unsigned char*)str_hostname, 20);
+  (**mPtr_param).getId(MEMID_HOSTNAME, (uint8_t*)str_hostname);
   String hostname = String(str_hostname);
 
   if(m_WebServ.args())
